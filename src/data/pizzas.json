@@ -1,0 +1,79 @@
+[
+  {
+    "id": 1,
+    "nome": "Calabresa",
+    "descricao": "Pizza de calabresa com cebola e queijo",
+    "ingredientes": ["calabresa", "cebola", "queijo", "molho de tomate"],
+    "precos": {
+      "pequena": 30,
+      "media": 38,
+      "grande": 45
+    }
+  },
+  {
+    "id": 2,
+    "nome": "Margherita",
+    "descricao": "Pizza clássica com tomate, mussarela e manjericão",
+    "ingredientes": ["tomate", "mussarela", "manjericao"],
+    "precos": {
+      "pequena": 28,
+      "media": 36,
+      "grande": 42
+    }
+  },
+  {
+    "id": 3,
+    "nome": "Portuguesa",
+    "descricao": "Pizza com presunto, ovos, cebola, queijo e ervilhas",
+    "ingredientes": ["presunto", "ovos", "cebola", "queijo", "ervilha"],
+    "precos": {
+      "pequena": 32,
+      "media": 40,
+      "grande": 48
+    }
+  },
+  {
+    "id": 4,
+    "nome": "Frango com Catupiry",
+    "descricao": "Pizza de frango desfiado com catupiry",
+    "ingredientes": ["frango", "catupiry", "queijo", "molho de tomate"],
+    "precos": {
+      "pequena": 33,
+      "media": 41,
+      "grande": 49
+    }
+  },
+  {
+    "id": 5,
+    "nome": "Quatro Queijos",
+    "descricao": "Pizza com mussarela, parmesão, provolone e gorgonzola",
+    "ingredientes": ["mussarela", "parmesao", "provolone", "gorgonzola"],
+    "precos": {
+      "pequena": 34,
+      "media": 42,
+      "grande": 50
+    }
+  },
+  {
+    "id": 6,
+    "nome": "Bacon",
+    "descricao": "Pizza com bacon crocante, queijo e molho de tomate",
+    "ingredientes": ["bacon", "queijo", "molho de tomate"],
+    "precos": {
+      "pequena": 33,
+      "media": 41,
+      "grande": 47
+    }
+  },
+  {
+    "id": 7,
+    "nome": "Vegetariana",
+    "descricao": "Pizza com tomate, milho, cebola, pimentão e azeitonas",
+    "ingredientes": ["tomate", "milho", "cebola", "pimentao", "azeitona"],
+    "precos": {
+      "pequena": 29,
+      "media": 37,
+      "grande": 44
+    }
+  }
+]
