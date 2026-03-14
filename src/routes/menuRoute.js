@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { listarMenu } from "../controllers/menuController.js";
+import { MenuController } from "../controllers/MenuController.js";
 
 const router = Router();
 
-router.get("/", listarMenu);
-router.get("/:tipo", listarMenu);
+router.get("/", MenuController.listarMenu);
+router.get("/:tipo", MenuController.listarMenu);
 
 export default router;

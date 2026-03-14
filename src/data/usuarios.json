@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "nome": "Carlos Mendes",
+    "email": "carlos.mendes@pizzalab.com",
+    "senha": "123456",
+    "cargo": "gestor",
+    "telefone": "84999887766",
+    "ativo": true
+  },
+  {
+    "id": 2,
+    "nome": "Juliana Rocha",
+    "email": "juliana.rocha@pizzalab.com",
+    "senha": "abc123",
+    "cargo": "pizzaiolo",
+    "telefone": "84988776655",
+    "ativo": true
+  },
+  {
+    "id": 3,
+    "nome": "Rafael Lima",
+    "email": "rafael.lima@pizzalab.com",
+    "senha": "rafa123",
+    "cargo": "entregador",
+    "telefone": "84977665544",
+    "ativo": true
+  },
+  {
+    "id": 4,
+    "nome": "Marcos Ferreira",
+    "email": "marcos.ferreira@pizzalab.com",
+    "senha": "pizza456",
+    "cargo": "pizzaiolo",
+    "telefone": "84966554433",
+    "ativo": false
+  },
+  {
+    "id": 5,
+    "nome": "Fernanda Alves",
+    "email": "fernanda.alves@pizzalab.com",
+    "senha": "fernanda123",
+    "cargo": "entregador",
+    "telefone": "84955443322",
+    "ativo": true
+  }
+]
