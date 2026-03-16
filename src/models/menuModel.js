@@ -6,3 +6,5 @@ const menu = { pizzas, bebidas };
 export const getMenu = (tipo) => {
   return tipo ? menu[tipo] : menu;
 };
+
+

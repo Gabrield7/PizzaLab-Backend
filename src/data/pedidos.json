@@ -1,0 +1,75 @@
+[
+  {
+    "id": 1,
+    "cliente": {
+      "nome": "João Silva",
+      "telefone": "11999999999"
+    },
+    "endereco": {
+      "rua": "Rua das Flores",
+      "numero": 120,
+      "bairro": "Centro",
+      "cidade": "São Paulo",
+      "cep": "01000-000"
+    },
+    "itens": [
+      {
+        "produtoId": 1,
+        "nome": "Calabresa",
+        "tipo": "pizza",
+        "quantidade": 1,
+        "preco": 45,
+        "subtotal": 45
+      },
+      {
+        "produtoId": 5,
+        "nome": "Refrigerante 2L",
+        "tipo": "bebida",
+        "quantidade": 1,
+        "preco": 12,
+        "subtotal": 12
+      }
+    ],
+    "valorTotal": 57,
+    "status": "preparo",
+    "pizzaioloId": 2,
+    "entregadorId": 3,
+    "dataPedido": "2026-03-14T19:30:00"
+  },
+  {
+    "id": 2,
+    "cliente": {
+      "nome": "Maria Joana",
+      "telefone": "84999999999"
+    },
+    "endereco": {
+      "rua": "Rua A",
+      "numero": 123,
+      "bairro": "Centro",
+      "cidade": "São Paulo",
+      "cep": "01000-000"
+    },
+    "itens": [
+      {
+        "produtoId": 1,
+        "nome": "Calabresa",
+        "tipo": "pizza",
+        "quantidade": 1,
+        "subtotal": null
+      },
+      {
+        "produtoId": 2,
+        "nome": "Guaraná Antarctica",
+        "tipo": "bebida",
+        "quantidade": 2,
+        "preco": 10,
+        "subtotal": 20
+      }
+    ],
+    "valorTotal": null,
+    "status": "recebido",
+    "pizzaioloId": 1,
+    "entregadorId": 1,
+    "dataPedido": "2026-03-15T18:00:31.186Z"
+  }
+]
