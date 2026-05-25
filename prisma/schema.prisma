@@ -6,15 +6,17 @@ datasource db {
   provider = "mysql"
 }
 
-model cliente {
+model Cliente {
   id       Int        @id @default(autoincrement())
   nome     String     @db.VarChar(255)
   telefone String     @db.VarChar(30)
-  endereco endereco[]
-  pedido   pedido[]
+  endereco Endereco[]
+  pedido   Pedido[]
+
+  @@map("cliente")
 }
 
-model endereco {
+model Endereco {
   id          Int      @id @default(autoincrement())
   cliente_id  Int
   logradouro  String?  @db.VarChar(255)
@@ -24,92 +26,105 @@ model endereco {
   cep         String?  @db.VarChar(8)
   complemento String?  @db.VarChar(255)
   ativo       Boolean? @default(true)
-  cliente     cliente  @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_endereco_cliente")
-  pedido      pedido[]
+  cliente     Cliente  @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_endereco_cliente")
+  pedido      Pedido[]
 
   @@index([cliente_id], map: "fk_endereco_cliente")
+  @@map("endereco")
 }
 
-model ingrediente {
+model Ingrediente {
   id                  Int                         @id @default(autoincrement())
-  nome                String?                     @db.VarChar(100)
+  nome                String                      @db.VarChar(100)
   quantidade_atual    Decimal?                    @db.Decimal(10, 3)
-  unidade_medida      ingrediente_unidade_medida? @default(un)
+  unidade_medida      ingrediente_unidade_medida  @default(un)
   estoque_minimo      Decimal?                    @db.Decimal(10, 3)
   preco_unitario      Decimal?                    @db.Decimal(10, 2)
-  produto_ingrediente produto_ingrediente[]
+  produto_ingrediente ProdutoIngrediente[]
+
+  @@map("ingrediente")
 }
 
-model itens_pedido {
+model ItemPedido {
   id             Int      @id @default(autoincrement())
   pedido_id      Int
   produto_id     Int
   quantidade     Int
   preco_unitario Decimal  @db.Decimal(10, 2)
   subtotal       Decimal? @db.Decimal(10, 2)
-  pedido         pedido   @relation(fields: [pedido_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pedido_item_pedido")
-  produto        produto  @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_produto_item_pedido")
+  pedido         Pedido   @relation(fields: [pedido_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pedido_item_pedido")
+  produto        Produto  @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_produto_item_pedido")
 
   @@index([pedido_id], map: "fk_pedido_item_pedido")
   @@index([produto_id], map: "fk_produto_item_pedido")
+  @@map("itens_pedido")
 }
 
-model pedido {
-  id                                    Int            @id @default(autoincrement())
-  cliente_id                            Int
-  endereco_id                           Int
-  pizzaiolo_id                          Int?
-  entregador_id                         Int?
-  status                                pedido_status? @default(pendente)
-  valor_total                           Decimal        @db.Decimal(10, 2)
-  data_pedido                           DateTime?      @default(now()) @db.Timestamp(0)
-  itens_pedido                          itens_pedido[]
-  cliente                               cliente        @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cliente_pedido")
-  endereco                              endereco       @relation(fields: [endereco_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_endereco_pedido")
+model Pedido {
+  id                  Int            @id @default(autoincrement())
+  cliente_id          Int
+  endereco_id         Int
+  pizzaiolo_id        Int?
+  entregador_id       Int?
+  status              pedido_status  @default(pendente)
+  valor_total         Decimal        @db.Decimal(10, 2)
+  data_pedido         DateTime       @default(now()) @db.Timestamp(0)
+  itens_pedido        ItemPedido[]
+  cliente             Cliente        @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cliente_pedido")
+  endereco            Endereco       @relation(fields: [endereco_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_endereco_pedido")
 
-  entregador                            usuario?  @relation("pedido_entregador", fields: [entregador_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_entregador_pedido")
-  pizzaiolo                             usuario?  @relation("pedido_pizzaiolo", fields: [pizzaiolo_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pizzaiolo_pedido")
+  entregador          Usuario?  @relation("pedido_entregador", fields: [entregador_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_entregador_pedido")
+  pizzaiolo           Usuario?  @relation("pedido_pizzaiolo", fields: [pizzaiolo_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pizzaiolo_pedido")
 
   @@index([cliente_id], map: "fk_cliente_pedido")
   @@index([endereco_id], map: "fk_endereco_pedido")
   @@index([entregador_id], map: "fk_entregador_pedido")
   @@index([pizzaiolo_id], map: "fk_pizzaiolo_pedido")
+
+  @@map("pedido")
 }
 
-model produto {
+model Produto {
   id                  Int                   @id @default(autoincrement())
-  nome                String?               @db.VarChar(100)
+  nome                String                @db.VarChar(100)
   descricao           String?               @db.VarChar(255)
   preco_unitario      Decimal               @db.Decimal(10, 2)
-  categoria           produto_categoria?
-  itens_pedido        itens_pedido[]
-  produto_ingrediente produto_ingrediente[]
+  categoria           produto_categoria
+  itens_pedido        ItemPedido[]
+  produto_ingrediente ProdutoIngrediente[]
+
+  @@map("produto")
 }
 
-model produto_ingrediente {
+model ProdutoIngrediente {
   id             Int         @id @default(autoincrement())
   produto_id     Int
   ingrediente_id Int
   quantidade     Decimal     @db.Decimal(10, 3)
-  ingrediente    ingrediente @relation(fields: [ingrediente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ingrediente_prod_ing")
-  produto        produto     @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_produto_prod_ing")
+  ingrediente    Ingrediente @relation(fields: [ingrediente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ingrediente_prod_ing")
+  produto        Produto     @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_produto_prod_ing")
 
   @@index([ingrediente_id], map: "fk_ingrediente_prod_ing")
   @@index([produto_id], map: "fk_produto_prod_ing")
+
+  @@map("produtos_ingredientes")
 }
 
-model usuario {
+model Usuario {
   id                                   Int            @id @default(autoincrement())
   nome                                 String         @db.VarChar(255)
   email                                String         @unique(map: "email") @db.VarChar(255)
   senha                                String         @db.VarChar(255)
   telefone                             String?        @db.VarChar(30)
-  cargo                                usuario_cargo?
-  data_criacao                         DateTime?      @default(now()) @db.Timestamp(0)
+  cargo                                usuario_cargo 
+  data_criacao                         DateTime       @default(now()) @db.Timestamp(0)
 
-  pedidos_como_entregador              pedido[]  @relation("pedido_entregador")
-  pedidos_como_pizzaiolo               pedido[]  @relation("pedido_pizzaiolo")
+  pedidos_como_entregador              Pedido[]  @relation("pedido_entregador")
+  pedidos_como_pizzaiolo               Pedido[]  @relation("pedido_pizzaiolo")
+
+  @@map("usuario")
 }
+
 enum ingrediente_unidade_medida {
   un
   kg
