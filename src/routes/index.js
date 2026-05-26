@@ -1,5 +1,5 @@
 import { Router } from "express";
-import menuRoute from "./ProdutoRoute.js";
+import produtoRoute from "./ProdutoRoute.js";
 import usuarioRoute from "./usuarioRoute.js";
 import pedidoRoute from "./pedidoRoute.js";
 
@@ -9,7 +9,7 @@ routes.get("/", (req, res) => {
   res.status(200).send("API Pizzalab funcionando 🍕");
 });
 
-routes.use("/menu", menuRoute);
+routes.use(produtoRoute);
 routes.use("/usuarios", usuarioRoute);
 routes.use("/pedidos", pedidoRoute);
 

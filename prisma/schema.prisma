@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model Cliente {
@@ -34,12 +35,12 @@ model Endereco {
 }
 
 model Ingrediente {
-  id                  String                 @id @db.VarChar(12)
-  nome                String                 @db.VarChar(100)
-  quantidade_atual    Decimal?               @db.Decimal(10, 3)
-  unidade_medida      ingrediente_unidade_medida @default(un)
-  estoque_minimo      Decimal?               @db.Decimal(10, 3)
-  preco_unitario      Decimal?               @db.Decimal(10, 2)
+  id                  String                      @id @db.VarChar(12)
+  nome                String                      @db.VarChar(100)
+  quantidade_atual    Decimal?                    @db.Decimal(10, 3)
+  unidade_medida      ingrediente_unidade_medida? @default(un)
+  estoque_minimo      Decimal?                    @db.Decimal(10, 3)
+  preco_unitario      Decimal?                    @db.Decimal(10, 2)
   produto_ingrediente ProdutoIngrediente[]
 
   @@map("ingrediente")
@@ -48,7 +49,7 @@ model Ingrediente {
 model ItemPedido {
   id                    String   @id @db.VarChar(12)
   pedido_id             String   @db.VarChar(12)
-  produto_id            String   @db.VarChar(12)
+  produto_id            String?  @db.VarChar(12)
 
   // Campo de Snapshot (momento da venda)
   nome_snapshot         String   @db.VarChar(100)
@@ -93,8 +94,9 @@ model Produto {
   nome                String               @db.VarChar(100)
   descricao           String               @db.VarChar(255)
   preco_unitario      Decimal              @db.Decimal(10, 2)
-  categoria           produto_categoria
+  categoria           produto_categoria    @default(pizza)
   imagem_url          String?              @db.VarChar(255)
+  ativo               Boolean              @default(true)
   itens_pedido        ItemPedido[]
   produto_ingrediente ProdutoIngrediente[]
 

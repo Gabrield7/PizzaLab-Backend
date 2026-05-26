@@ -4,13 +4,31 @@ import { nanoid } from "nanoid";
 class ProdutoController {
   static async getProdutos(req, res) {
     try {
-      const { categoria } = req.query; // Obter o parâmetro de categoria da query string
+      // Obter os parâmetros da query string
+      const { categoria, ordem, campo } = req.query; 
 
-      const queryConfig = { where: {} }; // Configuração base da consulta
+      const queryConfig = { 
+        where: { 
+          ativo: true
+        },
+        orderBy: {}
+      }; 
 
       if (categoria) { // Filtro Categoria
         queryConfig.where.categoria = categoria;
       }
+
+      // Define os campos permitidos para ordenação e os valores válidos para ordenação
+      const camposPermitidos = ['nome', 'preco'];
+      
+      // Escolhe o campo de ordenação válido ou define o padrão (Nome: A-Z)
+      const campoOrdenacao = camposPermitidos.includes(campo) ? campo : 'nome';
+
+      // Escolhe a direção de ordenação válida ou define o padrão (ascendente)
+      const direcaoOrdenacao = (ordem === 'asc' || ordem === 'desc') ? ordem : 'asc';
+
+      // Configura a ordenação na consulta do Prisma
+      queryConfig.orderBy[campoOrdenacao] = direcaoOrdenacao;
 
       // Listar os produtos no banco de dados
       const produtos = await prisma.produto.findMany(queryConfig);
@@ -61,14 +79,15 @@ class ProdutoController {
         data: {
           id: nanoid(12),
           nome,
-          preco_unitario: preco,
+          preco_unitario: preco ?? 0,
           descricao,
           categoria,
-          imagem_url: imagem || null
+          imagem_url: imagem || null,
+          ativo: true
         }
       });
 
-      return res.status(201).json({
+      return res.status(201).json({ // Retorno dos dados para o cliente
         message: "Produto criado com sucesso!",
         produto: novoProduto
       });
@@ -81,12 +100,12 @@ class ProdutoController {
   static async updateProduto(req, res) {
     try {
       const { id } = req.params;
-      const { nome, preco, descricao, categoria, imagem } = req.body;
+      const { nome, preco, descricao, categoria, imagem, ativo } = req.body;
 
       // Verificar se o produto existe
-      const produtoExistente = await prisma.produto.findUnique({ where: { id } });
+      const produto = await prisma.produto.findUnique({ where: { id } });
 
-      if (!produtoExistente) {
+      if (!produto) {
         return res.status(404).json({ message: `Produto com ID ${id} não encontrado` });
       }
 
@@ -98,6 +117,8 @@ class ProdutoController {
       if (descricao !== undefined) dadosParaAtualizar.descricao = descricao;
       if (categoria !== undefined) dadosParaAtualizar.categoria = categoria;
       if (imagem !== undefined) dadosParaAtualizar.imagem_url = imagem || null;
+      if (ativo !== undefined) dadosParaAtualizar.ativo = ativo;
+
 
       // Atualizar o produto com os dados filtrados
       const produtoAtualizado = await prisma.produto.update({
@@ -120,19 +141,21 @@ class ProdutoController {
       const { id } = req.params;
 
       // Verificar se o produto existe
-      const produtoExistente = await prisma.produto.findUnique({ where: { id } });
+      const produto = await prisma.produto.findUnique({ where: { id } });
 
-      if (!produtoExistente) {
+      if (!produto) { // Erro caso o produto não seja encontrado
         return res.status(404).json({ message: `Produto com ID ${id} não encontrado` });
       }
 
-      // Deletar o produto do banco de dados
-      await prisma.produto.delete({ where: { id } });
-
-      return res.status(200).json({ 
-        message: `Produto ${id} deletado com sucesso!`, 
-        produto: produtoExistente 
+      await prisma.produto.update({ // Desativa o produto no banco de dados
+        where: { id },
+        data: { ativo: false }
       });
+
+      return res.status(200).json({ // Retorno dos dados para o cliente
+        message: `Produto ${produto.nome} desativado com sucesso!`, 
+      });
+
     } catch (error) {
       console.error("Erro no deleteProduto:", error);
       return res.status(500).json({ error: "Erro interno ao deletar o produto" });
