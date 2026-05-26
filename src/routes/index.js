@@ -1,5 +1,5 @@
 import { Router } from "express";
-import menuRoute from "./menuRoute.js";
+import menuRoute from "./ProdutoRoute.js";
 import usuarioRoute from "./usuarioRoute.js";
 import pedidoRoute from "./pedidoRoute.js";
 
