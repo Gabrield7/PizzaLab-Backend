@@ -1,43 +1,40 @@
 import prisma from "../config/database.js";
 import { nanoid } from "nanoid";
+import { salvarIngredientes } from "../utils/ReceitaUtils.js";
 
 class ProdutoController {
   static async getProdutos(req, res) {
     try {
-      // Obter os parâmetros da query string
-      const { categoria, ordem, campo } = req.query; 
-
-      const queryConfig = { 
-        where: { 
-          ativo: true
-        },
+      const { categoria, ordem, campo } = req.query;
+ 
+      const queryConfig = {
+        where: { ativo: true },
         orderBy: {}
-      }; 
-
-      if (categoria) { // Filtro Categoria
+      };
+ 
+      if (categoria) {
         queryConfig.where.categoria = categoria;
       }
-
-      // Define os campos permitidos para ordenação e os valores válidos para ordenação
-      const camposPermitidos = ['nome', 'preco'];
-      
-      // Escolhe o campo de ordenação válido ou define o padrão (Nome: A-Z)
-      const campoOrdenacao = camposPermitidos.includes(campo) ? campo : 'nome';
-
-      // Escolhe a direção de ordenação válida ou define o padrão (ascendente)
-      const direcaoOrdenacao = (ordem === 'asc' || ordem === 'desc') ? ordem : 'asc';
-
-      // Configura a ordenação na consulta do Prisma
+ 
+      // Permite retornar os ingredientes associados ao produto
+      queryConfig.include = {
+        produto_ingrediente: {
+          include: { ingrediente: true }
+        }
+      };
+ 
+      const camposPermitidos = ["nome", "preco_unitario"];
+      const campoOrdenacao = camposPermitidos.includes(campo) ? campo : "nome";
+      const direcaoOrdenacao = ordem === "desc" ? "desc" : "asc";
+ 
       queryConfig.orderBy[campoOrdenacao] = direcaoOrdenacao;
-
-      // Listar os produtos no banco de dados
+ 
       const produtos = await prisma.produto.findMany(queryConfig);
-
-      if (produtos.length === 0) { // Erro caso não haja produtos cadastrados
+ 
+      if (produtos.length === 0) {
         return res.status(404).json({ message: "Nenhum produto cadastrado no momento." });
       }
-
-      // Retorno dos dados para o cliente
+ 
       return res.status(200).json(produtos);
     } catch (error) {
       console.error("Erro no getProdutos:", error);
@@ -68,23 +65,34 @@ class ProdutoController {
 
   static async createProduto(req, res) {
     try {
-      const { nome, preco, descricao, categoria, imagem } = req.body;
+      const { nome, preco, descricao, categoria, imagem, ingredientes } = req.body;
 
       if (!nome || !preco || !descricao || !categoria) { // Verificação de campos obrigatórios
-        return res.status(400).json({ error: "Campos obrigatórios ausentes." });
+        return res.status(400).json({ error: "Campos obrigatórios ausentes" });
       }
 
-      // Criação do novo produto no banco de dados
-      const novoProduto = await prisma.produto.create({
-        data: {
-          id: nanoid(12),
-          nome,
-          preco_unitario: preco ?? 0,
-          descricao,
-          categoria,
-          imagem_url: imagem || null,
-          ativo: true
-        }
+      // Valida se a lista de ingredientes é um array válido
+      if (!Array.isArray(ingredientes) || ingredientes.length === 0) {
+        return res.status(400).json({ error: "O campo ingredientes deve ser uma lista e conter ao menos um item" });
+      }
+      // Inicia transação para garantir que a criação do produto e o salvamento dos ingredientes sejam atômicos
+      const novoProduto = await prisma.$transaction(async (tx) => {
+        const produto = await tx.produto.create({
+          data: {
+            id: nanoid(12),
+            nome,
+            preco_unitario: preco ?? 0,
+            descricao,
+            categoria,
+            imagem_url: imagem || null,
+            ativo: true
+          }
+        });
+
+        // Salva os ingredientes associados ao produto
+        await salvarIngredientes(tx, produto.id, ingredientes);
+
+        return produto;
       });
 
       return res.status(201).json({ // Retorno dos dados para o cliente
@@ -92,15 +100,18 @@ class ProdutoController {
         produto: novoProduto
       });
     } catch (error) {
-      console.error("Erro no createProduto:", error);
+      if (error.message === "Um ou mais ingredientes informados não existem no sistema") {
+        return res.status(400).json({ error: error.message });
+      }
+
       return res.status(500).json({ error: "Erro interno ao criar o produto" });
     }
   }
-
+  
   static async updateProduto(req, res) {
     try {
       const { id } = req.params;
-      const { nome, preco, descricao, categoria, imagem, ativo } = req.body;
+      const { nome, preco, descricao, categoria, imagem, ativo, ingredientes } = req.body;
 
       // Verificar se o produto existe
       const produto = await prisma.produto.findUnique({ where: { id } });
@@ -119,11 +130,17 @@ class ProdutoController {
       if (imagem !== undefined) dadosParaAtualizar.imagem_url = imagem || null;
       if (ativo !== undefined) dadosParaAtualizar.ativo = ativo;
 
+      const produtoAtualizado = await prisma.$transaction(async (tx) => {
+        // Atualiza os dados normais do produto
+        const atualizado = await tx.produto.update({
+          where: { id },
+          data: dadosParaAtualizar
+        });
 
-      // Atualizar o produto com os dados filtrados
-      const produtoAtualizado = await prisma.produto.update({
-        where: { id },
-        data: dadosParaAtualizar
+        // Salva os ingredientes associados ao produto
+        await salvarIngredientes(tx, id, ingredientes);
+
+        return atualizado;
       });
 
       return res.status(200).json({ 
@@ -131,7 +148,9 @@ class ProdutoController {
         produto: produtoAtualizado 
       });
     } catch (error) {
-      console.error("Erro no updateProduto:", error);
+      if (error.message === "Um ou mais ingredientes informados não existem no sistema.") {
+        return res.status(400).json({ error: error.message });
+      }
       return res.status(500).json({ error: "Erro interno ao atualizar o produto" });
     }
   }

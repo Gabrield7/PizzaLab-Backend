@@ -1,4 +1,4 @@
-import { prisma } from "../config/database.js";
+import prisma from "../config/database.js";
 import { nanoid } from "nanoid";
 import { 
   calcularStatusEstoque, 
@@ -144,11 +144,22 @@ export class IngredienteController {
         return res.status(404).json({ message: `Ingrediente com ID ${id} não encontrado` });
       }
 
+      // Verificar se o ingrediente está sendo usado em algum produto
+      const emUso = await prisma.produtoIngrediente.findFirst({
+        where: { ingrediente_id: id }
+      });
+
+      if (emUso) {
+        return res.status(400).json({ 
+          message: "Este ingrediente não pode ser deletado porque está sendo usado em uma ou mais receitas" 
+        });
+      }
+
       // Deletar o ingrediente do banco de dados
       await prisma.ingrediente.delete({ where: { id } });
 
       return res.status(200).json({ // Retorno dos dados para o cliente
-        message: `Ingrediente ${id} deletado com sucesso!` 
+        message: `Ingrediente ${ingrediente.nome} deletado com sucesso!` 
       });
     } catch (error) {
       console.error("Erro no deleteIngrediente:", error);
