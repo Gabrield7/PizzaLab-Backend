@@ -9,8 +9,9 @@ routes.get("/", (req, res) => {
   res.status(200).send("API Pizzalab funcionando 🍕");
 });
 
-routes.use(produtoRoute);
-routes.use("/usuarios", usuarioRoute);
-routes.use("/pedidos", pedidoRoute);
+routes.use('/produtos', produtoRoute);
+routes.use('/clientes', clienteRoute);
+routes.use('/usuarios', usuarioRoute);
+routes.use('/pedidos', pedidoRoute);
 
 export default routes;

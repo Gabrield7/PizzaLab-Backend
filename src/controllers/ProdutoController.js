@@ -35,7 +35,10 @@ class ProdutoController {
         return res.status(404).json({ message: "Nenhum produto cadastrado no momento." });
       }
  
-      return res.status(200).json(produtos);
+      return res.status(200).json({ 
+        message: "Produtos listados com sucesso!",
+        produtos 
+      });
     } catch (error) {
       console.error("Erro no getProdutos:", error);
       return res.status(500).json({ error: "Erro ao listar produtos" });
@@ -56,7 +59,10 @@ class ProdutoController {
       }
 
       // Retorno dos dados para o cliente
-      return res.status(200).json(produto);
+      return res.status(200).json({ 
+        message: `Produto encontrado com sucesso!`, 
+        produto 
+      });
     } catch (error) {
       console.error("Erro no getProdutosById:", error);
       return res.status(500).json({ error: "Erro interno ao buscar o produto" });

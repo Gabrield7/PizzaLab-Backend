@@ -35,7 +35,10 @@ export class IngredienteController {
         return res.status(404).json({ message: "Nenhum ingrediente encontrado para essa busca." });
       }
 
-      return res.status(200).json(resultadoFinal); // Retorno dos dados para o cliente
+      return res.status(200).json({  // Retorno dos dados para o cliente
+        message: "Ingredientes listados com sucesso!",
+        ingredientes: resultadoFinal 
+      });
     } catch (error) {
       console.error("Erro no getIngredientes:", error);
       return res.status(500).json({ error: "Erro interno ao listar ingredientes" });
@@ -61,7 +64,10 @@ export class IngredienteController {
         status: calcularStatusEstoque(ingrediente.quantidade_atual, ingrediente.estoque_minimo)
       };
 
-      return res.status(200).json(ingredienteComStatus); // Retorno dos dados para o cliente
+      return res.status(200).json({ 
+        message: "Ingrediente encontrado com sucesso!",
+        ingrediente: ingredienteComStatus 
+      }); // Retorno dos dados para o cliente
     } catch (error) {
       console.error("Erro no getIngredientesById:", error);
       return res.status(500).json({ error: "Erro interno ao buscar ingrediente" });

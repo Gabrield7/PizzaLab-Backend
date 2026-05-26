@@ -3,10 +3,10 @@ import { IngredienteController } from "../controllers/IngredienteController.js";
 
 const router = Router();
 
-router.get("/ingredientes", IngredienteController.getIngredientes);
-router.get("/ingredientes/:id", IngredienteController.getIngredientesById);
-router.post("/ingredientes", IngredienteController.createIngrediente);
-router.put("/ingredientes/:id", IngredienteController.updateIngrediente);
-router.delete("/ingredientes/:id", IngredienteController.deleteIngrediente);
+router.get('/', IngredienteController.getIngredientes);
+router.get('/:id', IngredienteController.getIngredientesById);
+router.post('/', IngredienteController.createIngrediente);
+router.put('/:id', IngredienteController.updateIngrediente);
+router.delete('/:id', IngredienteController.deleteIngrediente);
 
 export default router;

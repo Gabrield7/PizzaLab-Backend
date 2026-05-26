@@ -3,10 +3,10 @@ import { ProdutoController } from "../controllers/ProdutoController.js";
 
 const router = Router();
 
-router.get("/produtos", ProdutoController.getProdutos);
-router.get("/produtos/:id", ProdutoController.getProdutosById);
-router.post("/produtos", ProdutoController.createProduto);
-router.put("/produtos/:id", ProdutoController.updateProduto);
-router.delete("/produtos/:id", ProdutoController.deleteProduto);
+router.get('/', ProdutoController.getProdutos);
+router.get('/:id', ProdutoController.getProdutosById);
+router.post('', ProdutoController.createProduto);
+router.put('/:id', ProdutoController.updateProduto);
+router.delete('/:id', ProdutoController.deleteProduto);
 
 export default router;
