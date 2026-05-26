@@ -145,6 +145,7 @@ model Usuario {
   telefone                String?       @db.VarChar(30)
   cargo                   usuario_cargo 
   data_criacao            DateTime      @default(now()) @db.Timestamp(0)
+  ativo                   Boolean       @default(true)
 
   pedidos_como_entregador Pedido[]      @relation("pedido_entregador")
   pedidos_como_pizzaiolo  Pedido[]      @relation("pedido_pizzaiolo")

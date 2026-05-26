@@ -10,6 +10,7 @@ routes.get("/", (req, res) => {
 });
 
 routes.use('/produtos', produtoRoute);
+routes.use('/ingredientes', ingredienteRoute);
 routes.use('/clientes', clienteRoute);
 routes.use('/usuarios', usuarioRoute);
 routes.use('/pedidos', pedidoRoute);
