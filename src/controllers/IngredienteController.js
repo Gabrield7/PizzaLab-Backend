@@ -107,7 +107,7 @@ export class IngredienteController {
   static async updateIngrediente(req, res) {
     try {
       const { id } = req.params;
-      const { nome, quantidade_atual, estoque_minimo, preco_unitario } = req.body;
+      const { nome, quantidade_atual, estoque_minimo, preco_unitario, unidade_medida } = req.body;
 
       // Verificar se o ingrediente existe
       const ingrediente = await prisma.ingrediente.findUnique({ where: { id } });
@@ -122,6 +122,7 @@ export class IngredienteController {
       if (quantidade_atual !== undefined) dadosParaAtualizar.quantidade_atual = quantidade_atual;
       if (estoque_minimo !== undefined) dadosParaAtualizar.estoque_minimo = estoque_minimo;
       if (preco_unitario !== undefined) dadosParaAtualizar.preco_unitario = preco_unitario;
+      if (unidade_medida !== undefined) dadosParaAtualizar.unidade_medida = unidade_medida;
 
       // Atualizar o ingrediente com os dados filtrados
       const ingredienteAtualizado = await prisma.ingrediente.update({

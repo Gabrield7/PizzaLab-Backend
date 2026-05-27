@@ -109,3 +109,58 @@ export function calculaTaxaEntregaPorBairro(bairro) {
 
   return tabelaPrecos[bairroFormatado] || taxaBase;
 }
+
+// Fluxo de status do pedido
+export const fluxoStatus = {
+  pedente:   ["em_preparo", "cancelado"],
+  em_preparo: ["pronto",    "cancelado"],
+  pronto:     ["em_rota"],
+  em_rota:    ["entregue"],
+  entregue:   [],
+  cancelado:  []
+};
+
+export const cargosPorTransicao = {
+  em_preparo: ["pizzaiolo", "gestor"],
+  pronto:     ["pizzaiolo", "gestor"],
+  em_rota:    ["entregador", "gestor"],
+  entregue:   ["entregador", "gestor"],
+  cancelado:  ["gestor"]
+};
+
+// Validações de transição
+export function validarTransicaoStatus(statusAtual, novoStatus) {
+  const permitidos = fluxoStatus[statusAtual];
+
+  if (!permitidos) {
+    throw new Error({ 
+      status: 400, 
+      message: `Status atual '${statusAtual}' não reconhecido` 
+    });
+  }
+
+  if (!permitidos.includes(novoStatus)) {
+    throw new Error({
+      status: 400,
+      message: `Transição inválida: pedido com status '${statusAtual}' não pode ir para '${novoStatus}'`
+    });
+  }
+}
+
+export function validarPermissaoTransicao(novoStatus, cargo) {
+  const autorizados = cargosPorTransicao[novoStatus];
+
+  if (!autorizados) {
+    throw new Error({
+      status: 400,
+      message: `Status destino '${novoStatus}' não possui regra de permissão definida`
+    });
+  }
+
+  if (!autorizados.includes(cargo)) {
+    throw new Error({
+      status: 403,
+      message: `Você não tem permissão para atualizar o status do pedido para '${novoStatus}'`
+    });
+  }
+}

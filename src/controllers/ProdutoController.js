@@ -51,7 +51,12 @@ class ProdutoController {
 
       // Buscar o produto no banco de dados pelo ID
       const produto = await prisma.produto.findUnique({ 
-        where: { id: id }
+        where: { id: id },
+        include: {
+          produto_ingrediente: {
+            include: { ingrediente: true }
+          }
+        }
       });
 
       if (!produto) { // Erro caso o produto não seja encontrado
@@ -106,7 +111,7 @@ class ProdutoController {
         produto: novoProduto
       });
     } catch (error) {
-      if (error.message === "Um ou mais ingredientes informados não existem no sistema") {
+      if (error.message && error.message.includes("não existem no sistema")) {
         return res.status(400).json({ error: error.message });
       }
 
@@ -142,9 +147,14 @@ class ProdutoController {
           where: { id },
           data: dadosParaAtualizar
         });
+        
+        if (ingredientes !== undefined) {
+          if (!Array.isArray(ingredientes) || ingredientes.length === 0) {
+            throw new Error("O campo ingredientes deve ser uma lista válida");
+          }
 
-        // Salva os ingredientes associados ao produto
-        await salvarIngredientes(tx, id, ingredientes);
+          await salvarIngredientes(tx, id, ingredientes);
+        }
 
         return atualizado;
       });

@@ -11,14 +11,17 @@ export async function salvarIngredientes(tx, produtoId, ingredientes) {
     const idsEnviados = ingredientes.map(item => item.id);
 
     // Busca no banco apenas os IDs que combinam com os enviados
-    const existentes = await prisma.ingrediente.findMany({
+    const existentes = await tx.ingrediente.findMany({
       where: { id: { in: idsEnviados } },
       select: { id: true }
     });
 
     // Se o banco achou menos ingredientes do que o usuário mandou, tem ID inválido!
     if (existentes.length !== idsEnviados.length) {
-      throw new Error("Um ou mais ingredientes informados não existem no sistema");
+      throw new Error({
+        status: 400,
+        message: "Um ou mais ingredientes informados não existem no sistema"
+      });
     }
   }
 

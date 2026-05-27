@@ -1,7 +1,51 @@
 import prisma from "../config/database.js";
 import { nanoid } from "nanoid";
+import bcrypt from "bcrypt";
 
 export class UsuarioController {
+  async login(req, res) {
+    try {
+      const { email, senha } = req.body;
+
+      // Validação básica de entrada
+      if (!email || !senha) {
+        return res.status(400).json({ error: "E-mail e senha são obrigatórios" });
+      }
+
+      const usuario = await prisma.usuario.findUnique({ where: { email } });
+
+      if (!usuario || !usuario.ativo) {
+        return res.status(401).json({ error: "Credenciais inválidas ou conta inativa" });
+      }
+
+      // Valida se a senha digitada bate com a do banco
+      const senhaValida = await bcrypt.compare(senha, usuario.senha);
+
+      if (!senhaValida) {
+        return res.status(401).json({ error: "Credenciais inválidas" });
+      }
+
+      // Gera o token JWT com o ID e cargo do usuário
+      const token = jwt.sign( 
+        { id: usuario.id, cargo: usuario.cargo }, 
+        process.env.JWT_SECRET, // Assina o token com a chave secreta definida no arquivo .env
+        { expiresIn: "8h" } // O token expira em 8 horas
+      );
+
+      delete usuario.senha; // evita enviar hash da senha para o cliente
+
+      return res.status(200).json({ // Retorno dos dados para o cliente
+        message: "Login efetuado com sucesso!",
+        usuario,
+        token
+      });
+
+    } catch (error) {
+      console.error("Erro no login:", error);
+      return res.status(500).json({ error: "Erro interno ao tentar fazer login" });
+    }
+  }
+
   async getUsuarios(req, res) {
     try {
       const { cargo, ordem, campo } = req.query;
@@ -69,6 +113,9 @@ export class UsuarioController {
         });
       }
 
+      const senhaTemporaria = nanoid(8);
+      const SALT_ROUNDS = 10;
+      const senhaCriptografada = await bcrypt.hash(senhaTemporaria, SALT_ROUNDS);
       // Sanitiza o telefone se ele tiver sido enviado
       const telefoneLimpo = telefone ? telefone.replace(/\D/g, '') : null;
 
@@ -77,13 +124,17 @@ export class UsuarioController {
           id: nanoid(12),
           nome,
           email,
-          senha: nanoid(8),
+          senha: senhaCriptografada,
           telefone: telefoneLimpo,
           cargo
         }
       });
 
-      return res.status(201).json(novoUsuario);
+      // Retorna para o usuário a "senhaTemporaria" em texto limpo APENAS nesta resposta HTTP, para que ele possa anotar e usar no primeiro acesso. Depois disso, só a senha criptografada ficará salva no banco de dados.
+      return res.status(201).json({
+        ...novoUsuario,
+        senha_temporaria: senhaTemporaria 
+      });
     } catch (error) {
       console.error("Erro no createUsuario:", error);
       return res.status(500).json({ error: "Erro interno ao criar usuário" });
@@ -95,6 +146,7 @@ export class UsuarioController {
     try {
       const { id } = req.params;
       const { nome, email, telefone, cargo, ativo } = req.body;
+      const { cargo: logadoCargo } = req.usuarioLogado;
 
       // Verificar se o usuário existe
       const usuario = await prisma.usuario.findUnique({ where: { id } });
@@ -109,8 +161,11 @@ export class UsuarioController {
       if (nome !== undefined) dadosParaAtualizar.nome = nome;
       if (email !== undefined) dadosParaAtualizar.email = email;
       if (telefone !== undefined) dadosParaAtualizar.telefone = telefone;
-      if (cargo !== undefined) dadosParaAtualizar.cargo = cargo;
-      if (ativo !== undefined) dadosParaAtualizar.ativo = ativo;
+
+      if (logadoCargo === "gestor") {
+        if (cargo !== undefined) dadosParaAtualizar.cargo = cargo;
+        if (ativo !== undefined) dadosParaAtualizar.ativo = ativo;
+      }
 
       // Salva os dados atualizados do usuário no banco de dados
       const usuarioAtualizado = await prisma.usuario.update({
@@ -174,9 +229,18 @@ export class UsuarioController {
         return res.status(401).json({ error: "A senha atual digitada está incorreta" });
       }
 
+      const senhaValida = await bcrypt.compare(senha_atual, usuario.senha);
+      if (!senhaValida) {
+        return res.status(401).json({ error: "A senha atual digitada está incorreta" });
+      }
+
+      // Criptografa a nova senha com o hash do bcrypt
+      const saltRounds = 10;
+      const novaSenhaCriptografada = await bcrypt.hash(nova_senha, saltRounds);
+
       await prisma.usuario.update({ // Atualiza para a nova senha
         where: { id },
-        data: { senha: nova_senha }
+        data: { senha: novaSenhaCriptografada }
       });
 
       return res.status(200).json({ message: "Senha alterada com sucesso!" });
