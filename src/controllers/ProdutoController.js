@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import { salvarIngredientes } from "../utils/ReceitaUtils.js";
 
 class ProdutoController {
-  static async getProdutos(req, res) {
+  static async getProdutos(req, res, next) {
     try {
       const { categoria, ordem, campo } = req.query;
  
@@ -40,12 +40,11 @@ class ProdutoController {
         produtos 
       });
     } catch (error) {
-      console.error("Erro no getProdutos:", error);
-      return res.status(500).json({ error: "Erro ao listar produtos" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  static async getProdutosById(req, res) {
+  static async getProdutosById(req, res, next) {
     try {
       const { id } = req.params; // Obter o ID do produto a partir dos parâmetros da rota
 
@@ -69,12 +68,11 @@ class ProdutoController {
         produto 
       });
     } catch (error) {
-      console.error("Erro no getProdutosById:", error);
-      return res.status(500).json({ error: "Erro interno ao buscar o produto" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  static async createProduto(req, res) {
+  static async createProduto(req, res, next) {
     try {
       const { nome, preco, descricao, categoria, imagem, ingredientes } = req.body;
 
@@ -111,15 +109,11 @@ class ProdutoController {
         produto: novoProduto
       });
     } catch (error) {
-      if (error.message && error.message.includes("não existem no sistema")) {
-        return res.status(400).json({ error: error.message });
-      }
-
-      return res.status(500).json({ error: "Erro interno ao criar o produto" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
-  
-  static async updateProduto(req, res) {
+
+  static async updateProduto(req, res, next) {
     try {
       const { id } = req.params;
       const { nome, preco, descricao, categoria, imagem, ativo, ingredientes } = req.body;
@@ -164,14 +158,11 @@ class ProdutoController {
         produto: produtoAtualizado 
       });
     } catch (error) {
-      if (error.message === "Um ou mais ingredientes informados não existem no sistema.") {
-        return res.status(400).json({ error: error.message });
-      }
-      return res.status(500).json({ error: "Erro interno ao atualizar o produto" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  static async deleteProduto(req, res) {
+  static async deleteProduto(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -192,8 +183,7 @@ class ProdutoController {
       });
 
     } catch (error) {
-      console.error("Erro no deleteProduto:", error);
-      return res.status(500).json({ error: "Erro interno ao deletar o produto" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 }

@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import bcrypt from "bcrypt";
 
 export class UsuarioController {
-  async login(req, res) {
+  async login(req, res, next) {
     try {
       const { email, senha } = req.body;
 
@@ -41,12 +41,11 @@ export class UsuarioController {
       });
 
     } catch (error) {
-      console.error("Erro no login:", error);
-      return res.status(500).json({ error: "Erro interno ao tentar fazer login" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  async getUsuarios(req, res) {
+  async getUsuarios(req, res, next) {
     try {
       const { cargo, ordem, campo } = req.query;
 
@@ -76,12 +75,11 @@ export class UsuarioController {
         usuarios 
       });
     } catch (error) {
-      console.error("Erro no getUsuarios:", error);
-      return res.status(500).json({ error: "Erro interno ao listar usuários" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  async getUsuarioById(req, res) {
+  async getUsuarioById(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -98,8 +96,7 @@ export class UsuarioController {
         usuario
       });
     } catch (error) {
-      console.error("Erro no getUsuarioById:", error);
-      return res.status(500).json({ error: "Erro interno ao buscar o usuário" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
   
@@ -136,13 +133,11 @@ export class UsuarioController {
         senha_temporaria: senhaTemporaria 
       });
     } catch (error) {
-      console.error("Erro no createUsuario:", error);
-      return res.status(500).json({ error: "Erro interno ao criar usuário" });
-
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  async updateUsuario(req, res) {
+  async updateUsuario(req, res, next) {
     try {
       const { id } = req.params;
       const { nome, email, telefone, cargo, ativo } = req.body;
@@ -178,12 +173,11 @@ export class UsuarioController {
         usuario: usuarioAtualizado 
       });
     } catch (error) {
-      console.error("Erro no updateUsuario:", error);
-      return res.status(500).json({ error: "Erro interno ao atualizar usuário" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  async deleteUsuario(req, res) {
+  async deleteUsuario(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -203,12 +197,11 @@ export class UsuarioController {
         message: `Usuário ${usuario.nome} desativado com sucesso!`, 
       });
     } catch (error) {
-      console.error("Erro no deleteUsuario:", error);
-      return res.status(500).json({ error: "Erro interno ao deletar usuário" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  async updateSenha(req, res) {
+  async updateSenha(req, res, next) {
     try {
       const { id } = req.params;
       const { senha_atual, nova_senha } = req.body;
@@ -245,8 +238,7 @@ export class UsuarioController {
 
       return res.status(200).json({ message: "Senha alterada com sucesso!" });
     } catch (error) {
-      console.error("Erro no updateSenha:", error);
-      return res.status(500).json({ error: "Erro interno ao alterar a senha" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 }

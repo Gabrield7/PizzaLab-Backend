@@ -38,8 +38,7 @@ export class ClienteController {
         cliente
       });
     } catch (error) {
-      console.error("Erro no buscarPorTelefone:", error);
-      return res.status(500).json({ error: "Erro interno ao buscar cliente" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
@@ -65,8 +64,7 @@ export class ClienteController {
         message: 'Endereço removido desativado com sucesso' 
       });
     } catch (error) {
-      console.error("Erro no desativarEndereco:", error);
-      return res.status(500).json({ error: "Erro interno ao desativar endereço" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 }

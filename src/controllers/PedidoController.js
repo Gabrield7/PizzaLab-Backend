@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { calculaTotal, registraCliente, registraEndereco } from '../utils/PedidoUtils.js';
 
 class PedidosController {
-  async getPedidosParaPainel(req, res) { // Listar pedidos no painel, com filtros baseados no cargo do usuário logado
+  async getPedidosParaPainel(req, res, next) { // Listar pedidos no painel, com filtros baseados no cargo do usuário logado
     try {
       // Extração segura do ID e cargo do usuário logado a partir do token JWT
       const { id: usuarioId, cargo: usuarioCargo } = req.usuarioLogado;
@@ -43,12 +43,11 @@ class PedidosController {
       return res.status(200).json({pedidos});
 
     } catch (error) {
-      console.error("Erro no painel:", error);
-      return res.status(500).json({ error: "Erro interno ao processar painel." });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
   
-  static async createPedido(req, res) {
+  static async createPedido(req, res, next) {
     try {
       const {
         telefone,
@@ -116,12 +115,11 @@ class PedidosController {
         pedido: novoPedido
       });
     } catch (error) {
-      console.error("Erro no createPedido:", error);
-      return res.status(500).json({ error: "Erro interno ao criar pedido" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  static async atualizarStatus(req, res) {
+  static async atualizarStatus(req, res, next) {
     try {
       const { id } = req.params;
       const { novo_status } = req.body;
@@ -147,10 +145,7 @@ class PedidosController {
         pedido: pedidoAtualizado
       });
     } catch (error) {
-      if (error.status) return res.status(error.status).json({ error: error.message });
-      
-      console.error("Erro ao atualizar status do pedido:", error);
-      return res.status(500).json({ error: "Erro interno ao atualizar status do pedido." });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 }

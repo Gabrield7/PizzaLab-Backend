@@ -7,7 +7,7 @@ import {
 } from "../utils/IngredienteUtils.js";
 
 export class IngredienteController {
-  static async getIngredientes(req, res) {
+  static async getIngredientes(req, res, next) {
     try {
       // Obter os parâmetros da query string
       const { status, ordem, campo } = req.query; 
@@ -40,12 +40,11 @@ export class IngredienteController {
         ingredientes: resultadoFinal 
       });
     } catch (error) {
-      console.error("Erro no getIngredientes:", error);
-      return res.status(500).json({ error: "Erro interno ao listar ingredientes" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  static async getIngredientesById(req, res) {
+  static async getIngredientesById(req, res, next) {
     try {
       const { id } = req.params; // Obter o ID do ingrediente a partir dos parâmetros da rota
 
@@ -69,12 +68,11 @@ export class IngredienteController {
         ingrediente: ingredienteComStatus 
       }); // Retorno dos dados para o cliente
     } catch (error) {
-      console.error("Erro no getIngredientesById:", error);
-      return res.status(500).json({ error: "Erro interno ao buscar ingrediente" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  static async createIngrediente(req, res) {
+  static async createIngrediente(req, res, next) {
     try {
       const { nome, quantidade_atual, unidade_medida, estoque_minimo, preco_unitario } = req.body;
 
@@ -99,12 +97,11 @@ export class IngredienteController {
         ingrediente: novoIngrediente
       });
     } catch (error) {
-      console.error("Erro no createIngrediente:", error);
-      return res.status(500).json({ error: "Erro interno ao criar ingrediente" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  static async updateIngrediente(req, res) {
+  static async updateIngrediente(req, res, next) {
     try {
       const { id } = req.params;
       const { nome, quantidade_atual, estoque_minimo, preco_unitario, unidade_medida } = req.body;
@@ -135,12 +132,11 @@ export class IngredienteController {
         ingrediente: ingredienteAtualizado
       });
     } catch (error) {
-      console.error("Erro no updateIngrediente:", error);
-      return res.status(500).json({ error: "Erro interno ao atualizar ingrediente" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 
-  static async deleteIngrediente(req, res) {
+  static async deleteIngrediente(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -169,8 +165,7 @@ export class IngredienteController {
         message: `Ingrediente ${ingrediente.nome} deletado com sucesso!` 
       });
     } catch (error) {
-      console.error("Erro no deleteIngrediente:", error);
-      return res.status(500).json({ error: "Erro interno ao deletar ingrediente" });
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 }
