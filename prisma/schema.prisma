@@ -22,7 +22,7 @@ model Endereco {
   cliente_id  String   @db.VarChar(12)
   logradouro  String   @db.VarChar(255)
   numero      String   @db.VarChar(10)
-  bairro      String?  @db.VarChar(100)
+  bairro      String  @db.VarChar(100)
   cidade      String?  @db.VarChar(100)
   cep         String?  @db.VarChar(8)
   complemento String?  @db.VarChar(255)
@@ -94,7 +94,7 @@ model Pedido {
 
   // PEDIDO
   status              pedido_status @default(pendente)
-  subtotal            Decimal       @db.Decimal(10, 2)
+  //subtotal            Decimal       @db.Decimal(10, 2)
   taxa_entrega        Decimal       @default(0) @db.Decimal(10, 2)
   valor_total         Decimal       @db.Decimal(10, 2)
   observacoes         String?       @db.VarChar(500)

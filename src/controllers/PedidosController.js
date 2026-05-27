@@ -1,90 +1,80 @@
-import { getPedido, processarItensPedido, salvarPedido } from '../models/pedidosModel.js';
+import prisma from '../prismaClient.js';
+import { nanoid } from 'nanoid';
+import { calculaTotal, registraCliente, registraEndereco } from '../utils/PedidoUtils.js';
 
 class PedidosController {
-  static listarPedidos(req, res) {
-    const pedidos = getPedido();
-
-    if (!pedidos) {
-      return res.status(400).json({ error: "Pedido não encontrado!" });
-    }
-
-    return res.status(200).json(pedidos);
-  }
-
-  static listarPedido(req, res) {
-    const id = parseInt(req.params.id);
-    const pedidos = getPedido(id);
-
-    if (!pedidos) {
-      return res.status(400).json({ error: "Pedido não encontrado!" });
-    }
-
-    return res.status(200).json(pedidos);
-  }
-
-  static async criarPedido(req, res) {
-    const { cliente, endereco, itens } = req.body;
-
-    if(!cliente || !endereco || !itens) {
-      return res.status(400).json({ error: "Dados do pedido incompletos!" });
-    }
-
+  static async createPedido(req, res) {
     try {
-      const { itensProcessados, valorTotal } = processarItensPedido(itens);
-  
-      const novoPedido = {
-        id: getPedido().length + 1 || 1,
-        cliente,
-        endereco,
-        itens: itensProcessados,
-        valorTotal,
-        status: "recebido",
-        pizzaioloId: 1,
-        entregadorId: 1,
-        dataPedido: new Date()
-      };
-  
-      await salvarPedido(novoPedido);
-      return res.status(201).json({novoPedido});
-    } catch (erro) {
-      res.status(404).json({ error: erro.message });
+      const {
+        telefone,
+        nome,
+        logradouro,
+        numero,
+        bairro,
+        cidade,
+        cep,
+        complemento,
+        observacoes,
+        itens
+      } = req.body;
+
+      // Validação básica dos dados obrigatórios do checkout
+      if (!telefone || !nome || !logradouro || !bairro || !numero || !itens || itens.length === 0) {
+        return res.status(400).json({ error: "Dados obrigatórios do pedido estão ausentes." });
+      }
+
+      const telefoneLimpo = telefone.replace(/\D/g, '');
+      
+      // Cálculo de taxas e totais 
+      const taxaEntrega = calculaTaxaEntrega(bairro);
+      const { itensMapeados, totalGeral } = calculaTotal(itens, TAXA_ENTREGA, pedidoId);
+
+      const novoPedido = await prisma.$transaction(async (tx) => {
+        // Registro invisível do cliente e endereço
+        const cliente = await registraCliente(tx, nome, telefoneLimpo);
+        const endereco = await registraEndereco(tx, cliente.id, logradouro, numero, bairro, city = cidade, cep, complemento);
+
+        // 2. Criação do Pedido (Snapshots + Valores calculados)
+        const pedidoCriado = await tx.pedido.create({
+          data: {
+            id: nanoid(12),
+            cliente_id: cliente.id,
+            endereco_id: endereco.id,
+            cliente_nome: nome,
+            cliente_telefone: telefoneLimpo,
+
+            entrega_logradouro: logradouro,
+            entrega_numero: numero,
+            entrega_bairro: bairro,
+            entrega_cidade: cidade,
+            entrega_cep: cep,
+            entrega_complemento: complemento,
+
+            status: "pendente",
+            subtotal: subtotal,
+            taxa_entrega: taxaEntrega,
+            valor_total: total,
+            observacoes
+          }
+        });
+
+        // Grava os itens em lote no banco
+        await tx.itemPedido.createMany({
+          data: itensMapeados
+        });
+
+        return pedidoCriado;
+      });
+
+      return res.status(201).json({
+        message: "Pedido gerado com sucesso no PizzaLab!",
+        pedido: novoPedido
+      });
+    } catch (error) {
+      console.error("Erro no createPedido:", error);
+      return res.status(500).json({ error: "Erro interno ao criar pedido" });
     }
   }
-
-  // static processarItensPedido = (itens) => {
-  //   let valorTotal = 0;
-
-  //   const itensProcessados = itens.map(item => {
-  //     let produto;
-
-  //     if (item.tipo === "pizza") {
-  //       produto = pizzas.find(p => p.id === item.produtoId);
-  //     }
-
-  //     if (item.tipo === "bebida") {
-  //       produto = bebidas.find(b => b.id === item.produtoId);
-  //     }
-
-  //     if (!produto) {
-  //       throw new Error("Produto não encontrado.");
-  //     }
-
-  //     const subtotal = produto.preco * item.quantidade;
-
-  //     valorTotal += subtotal;
-
-  //     return {
-  //       produtoId: produto.id,
-  //       nome: produto.nome,
-  //       tipo: item.tipo,
-  //       quantidade: item.quantidade,
-  //       preco: produto.preco,
-  //       subtotal
-  //     };
-  //   });
-
-  //   return { itensProcessados, valorTotal };
-  // }
 }
 
 export { PedidosController };
