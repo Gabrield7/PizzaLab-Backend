@@ -1,3 +1,4 @@
+// Função para salvar os ingredientes de um produto
 export async function salvarIngredientes(tx, produtoId, ingredientes) {
   // Valida se a lista de ingredientes é um array válido
   if (ingredientes === undefined || !Array.isArray(ingredientes)) return;
@@ -18,10 +19,9 @@ export async function salvarIngredientes(tx, produtoId, ingredientes) {
 
     // Se o banco achou menos ingredientes do que o usuário mandou, tem ID inválido!
     if (existentes.length !== idsEnviados.length) {
-      throw new Error({
-        status: 400,
-        message: "Um ou mais ingredientes informados não existem no sistema"
-      });
+      const erro = new Error("Um ou mais ingredientes informados não existem no sistema");
+      erro.status = 400;
+      throw erro;
     }
   }
 

@@ -1,18 +1,22 @@
 import prisma from '../prismaClient.js';
 import { nanoid } from 'nanoid';
-import { calculaTotal, registraCliente, registraEndereco } from '../utils/PedidoUtils.js';
+import { 
+  calculaTotal, 
+  calculaTaxaEntrega,
+  validarTransicaoStatus,
+  validarPermissaoTransicao,
+  registraCliente, 
+  registraEndereco 
+} from '../utils/PedidoUtils.js';
 
 class PedidosController {
-  async getPedidosParaPainel(req, res, next) { // Listar pedidos no painel, com filtros baseados no cargo do usuário logado
+  static async getPedidosParaPainel(req, res, next) { // Listar pedidos no painel, com filtros baseados no cargo do usuário logado
     try {
-      // Extração segura do ID e cargo do usuário logado a partir do token JWT
-      const { id: usuarioId, cargo: usuarioCargo } = req.usuarioLogado;
+      const { cargo: usuarioCargo } = req.usuarioLogado;
 
       const queryConfig = { // Configuração base da consulta, sem filtros iniciais
         where: {},
-        include: {
-          itens_pedido: { include: { produto: true } }
-        },
+        include: { itens_pedido: { include: { produto: true } }},
         orderBy: { data_pedido: "asc" } 
       };
 
@@ -63,27 +67,25 @@ class PedidosController {
       } = req.body;
 
       // Validação básica dos dados obrigatórios do checkout
-      if (!telefone || !nome || !logradouro || !bairro || !numero || !itens || itens.length === 0) {
-        return res.status(400).json({ error: "Dados obrigatórios do pedido estão ausentes." });
+      if (!telefone || !nome || !logradouro || !bairro || !numero || itens?.length === 0) {
+        return res.status(400).json({ error: "Dados obrigatórios do pedido estão ausentes" });
       }
 
       const telefoneLimpo = telefone.replace(/\D/g, '');
-      
-      // Cálculo de taxas e totais 
       const taxaEntrega = calculaTaxaEntrega(bairro);
-      const { itensMapeados, totalGeral } = calculaTotal(itens, TAXA_ENTREGA, pedidoId);
+      const { itensMapeados, totalGeral } = calculaTotal(itens, taxaEntrega, pedidoId);
 
       const novoPedido = await prisma.$transaction(async (tx) => {
         // Registro invisível do cliente e endereço
         const cliente = await registraCliente(tx, nome, telefoneLimpo);
-        const endereco = await registraEndereco(tx, cliente.id, logradouro, numero, bairro, city = cidade, cep, complemento);
+        const endereco = await registraEndereco(tx, cliente.id, logradouro, numero, bairro, cidade, cep, complemento);
 
-        // 2. Criação do Pedido (Snapshots + Valores calculados)
         const pedidoCriado = await tx.pedido.create({
           data: {
             id: nanoid(12),
             cliente_id: cliente.id,
             endereco_id: endereco.id,
+            // Snapshots - preservam os dados no momento da compra
             cliente_nome: nome,
             cliente_telefone: telefoneLimpo,
 
@@ -95,17 +97,14 @@ class PedidosController {
             entrega_complemento: complemento,
 
             status: "pendente",
-            subtotal: subtotal,
             taxa_entrega: taxaEntrega,
-            valor_total: total,
+            valor_total: totalGeral,
             observacoes
           }
         });
 
         // Grava os itens em lote no banco
-        await tx.itemPedido.createMany({
-          data: itensMapeados
-        });
+        await tx.itemPedido.createMany({ data: itensMapeados });
 
         return pedidoCriado;
       });

@@ -1,113 +1,67 @@
 import { nanoid } from 'nanoid';
 
+// Função para registrar ou recuperar um cliente com base no telefone
 export async function registraCliente(tx, nome, telefone) {
-  let cliente = await tx.cliente.findUnique({
-    where: { telefone: telefone }
+  return await tx.cliente.upsert({
+    where: { telefone },
+    update: { nome }, // Se existir, atualiza o nome caso tenha mudado
+    create: { id: nanoid(12), nome, telefone }
   });
-
-  if (!cliente) {
-    cliente = await tx.cliente.create({
-      data: {
-        id: nanoid(12),
-        nome,
-        telefone: telefone
-      }
-    });
-  }
-
-  return cliente;
 }
 
+// Função para registrar ou recuperar um endereço com base nos dados fornecidos
 export async function registraEndereco(tx, clienteId, logradouro, numero, bairro, cidade, cep, complemento) {
-  let endereco = await tx.endereco.findFirst({
-    where: {
-      cliente_id: clienteId,
-      logradouro,
-      numero,
-      ativo: true
-    }
+  const existente = await tx.endereco.findFirst({
+    where: { cliente_id: clienteId, logradouro, numero, ativo: true }
   });
+
+  if (existente) return existente;
   
-  if (!endereco) {
-    endereco = await tx.endereco.create({
-      data: {
-        id: nanoid(12),
-        cliente_id: clienteId,
-        logradouro,
-        numero,
-        bairro,
-        cidade,
-        cep,
-        complemento
-      }
-    });
-  }
-
-  return endereco;
-}
-
-export function calculaTotal(itens, taxa = 0) {
-  // Calcula o somatório dos produtos de forma segura
-  const subtotal = itens.reduce((acumulado, item) => {
-    return acumulado + (item.quantidade * item.preco_unitario);
-  }, 0);
-
-  return {
-    subtotal,
-    total: subtotal + taxa
-  };
-}
-
-export function calculaTotal(itens, taxa = 0, pedidoId) {
-  // Mapeia os itens calculando o subtotal de cada um
-  const itensCalculados = itens.map((item) => {
-    const subtotalItem = item.quantidade * item.preco_unitario;
-    
-    return {
-      id: nanoid(12),
-      pedido_id: pedidoId,
-      produto_id: item.produto_id,
-      quantidade: item.quantidade,
-      preco_historico: item.preco_unitario,
-      subtotal: subtotalItem
-    };
+  return tx.endereco.create({
+    data: { id: nanoid(12), cliente_id: clienteId, logradouro, numero, bairro, cidade, cep, complemento }
   });
-
-  // Soma o subtotal de todos os itens para gerar o total geral
-  const valorProdutos = itensCalculados.reduce((acumulado, item) => {
-    return acumulado + item.subtotal;
-  }, 0);
-
-  return {
-    itensMapeados: itensCalculados,
-    totalGeral: valorProdutos + taxa
-  };
 }
 
-export function calculaTaxaEntregaPorBairro(bairro) {
+// Função para calcular o total do pedido com base nos itens e taxa de entrega
+export function calculaTotal(itens, taxa = 5, pedidoId) {
+  const itensMapeados = itens.map(item => ({
+    id: nanoid(12),
+    pedido_id: pedidoId,
+    produto_id: item.produto_id,
+    quantidade: item.quantidade,
+    preco_historico: item.preco_unitario,
+    subtotal: item.quantidade * item.preco_unitario
+  }));
+ 
+  const totalGeral = itensMapeados.reduce((acc, item) => acc + item.subtotal, 0) + taxa;
+ 
+  return { itensMapeados, totalGeral };
+}
+
+// Função para calcular a taxa de entrega com base no bairro do cliente
+export function calculaTaxaEntrega(bairro) {
   const taxaBase = 5.00; // Taxa base para bairros não listados
   if (!bairro) return taxaBase;
-  
-  // Remove acentos, espaços e converte para minúsculas
-  const bairroFormatado = bairro 
+ 
+  const bairroFormatado = bairro
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toLowerCase();
-
-  const tabelaPrecos = {
-    "santo antonio": 0.00,
-    "nova betania": 3.00,
-    "centro": 4.00,
-    "lto do vale": 6.00,
-    "maria auxiliadora": 5.50,
-    "padre jose cruza": 6.50,
-    "boa vista": 7.00,
+ 
+  const tabela = {
+    "santo antonio":          0.00,
+    "nova betania":           3.00,
+    "centro":                 4.00,
+    "lto do vale":            6.00,
+    "maria auxiliadora":      5.50,
+    "padre jose cruza":       6.50,
+    "boa vista":              7.00,
     "presidente costa silva": 8.00,
-    "zona rural": 15.00
+    "zona rural":            15.00
   };
-
-  return tabelaPrecos[bairroFormatado] || taxaBase;
+ 
+  return tabela[bairroFormatado] ?? taxaBase;
 }
 
 // Fluxo de status do pedido
@@ -120,6 +74,7 @@ export const fluxoStatus = {
   cancelado:  []
 };
 
+// Cargos autorizados para cada transição de status
 export const cargosPorTransicao = {
   em_preparo: ["pizzaiolo", "gestor"],
   pronto:     ["pizzaiolo", "gestor"],
@@ -128,7 +83,7 @@ export const cargosPorTransicao = {
   cancelado:  ["gestor"]
 };
 
-// Validações de transição
+// Função para validar se a transição de status é permitida
 export function validarTransicaoStatus(statusAtual, novoStatus) {
   const permitidos = fluxoStatus[statusAtual];
 
@@ -145,6 +100,7 @@ export function validarTransicaoStatus(statusAtual, novoStatus) {
   }
 }
 
+// Função para validar se o usuário tem permissão para realizar a transição de status
 export function validarPermissaoTransicao(novoStatus, cargo) {
   const autorizados = cargosPorTransicao[novoStatus];
 

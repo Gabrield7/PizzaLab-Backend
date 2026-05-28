@@ -22,7 +22,7 @@ export function authUsuario(req, res, next) {
     // Injeta os dados do usuário decodificados dentro da requisição
     req.usuarioLogado = {
       id: decodificado.id,
-      cargo: decodificado.cargo
+      cargo: decodificado.cargo ?? decodificado.role
     };
 
     return next(); // Continua para o próximo middleware ou rota
@@ -59,9 +59,13 @@ export function verificarPosse(req, res, next) {
   // Gestor tem acesso irrestrito a todos os recursos
   if (logadoCargo === "gestor") return next();
 
+  if (!req.params.id) {
+    console.error("'verificarPosse' aplicado em rota sem parâmetro :id");
+    return res.status(500).json({ error: "Erro interno: configuração inválida de rota" });
+  }
   // Usuário comum só pode acessar ou modificar seus próprios dados
   // O ID da URL deve bater com o ID do token
-  if (idUrl && logadoId === idUrl) return next();
+  if (logadoId === req.params.id) return next();
 
   // Se não for o gestor e o ID não bater, o acesso é sumariamente bloqueado
   return res.status(403).json({ 

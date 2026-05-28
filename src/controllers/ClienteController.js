@@ -1,70 +1,108 @@
-import { buscarClienteEUltimoEndereco } from '../utils/clienteUtils.js';
+import { prisma } from '../database/prismaClient.js';
 
 export class ClienteController {
-  async buscarPorTelefone(req, res, next) {
-    try {
-      const { telefone } = req.query;
-
-      if (!telefone) {
-        return res.status(400).json({ 
-          error: 'O parâmetro telefone é obrigatório para realizar a busca.' 
-        });
-      }
-
-      // Sanitiza o telefone para garantir que apenas números sejam considerados na busca
-      const telefoneLimpo = telefone.replace(/\D/g, '');
-
-      // Busca o cliente pelo telefone e inclui os endereços ativos associados a ele
-      const cliente = await prisma.cliente.findUnique({
-        where: { telefone: telefoneLimpo },
-        include: {
-          endereco: {
-            where: { ativo: true },
-            select: {
-              id: true,
-              logradouro: true,
-              numero: true,
-              bairro: true,
-              cidade: true,
-              cep: true,
-              complemento: true
-            }
-          }
-        }
-      });
-
-      return res.status(200).json({ // Retorno dos dados para o cliente
-        message: `Cliente encontrado com sucesso!`,
-        cliente
-      });
-    } catch (error) {
-      next(error); // Passa o erro para o middleware de tratamento de erros
-    }
-  }
-
-  async desativarEndereco(req, res, next) {
+  static async desativarEndereco(req, res, next) {
     try {
       const { id } = req.params;
 
       // Verifica se o endereço existe e está ativo
       const endereco = await prisma.endereco.findUnique({ where: { id } });
 
-      if (!endereco || !endereco.ativo) {
+      if (!endereco?.ativo) {
         return res.status(404).json({ 
           message: `Endereço não encontrado ou inativo` 
         });
       }
       // Desativa o endereço no banco de dados
-      await prisma.endereco.update({
-        where: { id },
-        data: { ativo: false }
-      });
+      await prisma.endereco.update({ where: { id }, data: { ativo: false } });
 
       return res.status(200).json({ 
-        message: 'Endereço removido desativado com sucesso' 
+        message: 'Endereço desativado com sucesso' 
       });
     } catch (error) {
       next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
+
+  static async enviaCodigoVerificado(req, res, next) {
+    try {
+      const { telefone } = req.body;
+      
+      if (!telefone) return res.status(400).json({ error: "Número de telefone não fornecido" });
+
+      const telefoneLimpo = telefone.replace(/\D/g, "");
+      const codigoOTP = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiracao = Date.now() + 300 * 1000; // 5 minutos
+
+      // Token de uso único para validar o código posteriormente
+      const tokenTemporario = jwt.sign(
+        { telefone: telefoneLimpo, codigoOTP, expiracao },
+        process.env.JWT_SECRET,
+        { expiresIn: "5m" }
+      );
+
+      const resposta = { message: "Código enviado!", token_temporario: tokenTemporario };
+      if (process.env.NODE_ENV !== "production") resposta.codigo_teste = codigoOTP;
+
+      return res.status(200).json(resposta);
+    } catch (error) {
+      next(error);
+    }
+  }
+ 
+  static async validaCodigo(req, res, next) {
+    try {
+      const { codigo, tokenTemporario } = req.body;
+
+      if (!codigo || !tokenTemporario) {
+        return res.status(400).json({ error: "Código e/ou token não fornecidos" });
+      }
+
+      // Decodifica os dados do token temporário
+      const dadosTemporarios = jwt.verify(tokenTemporario, process.env.JWT_SECRET);
+
+      if (Date.now() > dadosTemporarios.expiracao) { // Verifica se o token expirou
+        return res.status(401).json({ error: "Código de verificação expirado" });
+      }
+
+      if (dadosTemporarios.codigoOTP !== codigo) { // Verifica se o código OTP é válido
+        return res.status(401).json({ error: "Código de verificação inválido" });
+      }
+
+      // 
+      const cliente = await prisma.cliente.findUnique({
+        where: { telefone: dadosTemporarios.telefone },
+        include: { endereco: { where: { ativo: true } } }
+      });
+
+      // Gera um token de acesso para o cliente
+      const tokenAcesso = jwt.sign(
+        { telefone: dadosTemporarios.telefone, role: "cliente" },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+
+      if (!cliente) {
+        return res.status(200).json({
+          existe: false,
+          message: "Telefone validado. Por favor, informe seus dados para o primeiro pedido",
+          token: tokenAcesso,
+          telefone: dadosTemporarios.telefone
+        });
+      }
+
+      // Se o cliente JÁ EXISTE, devolvemos os dados dele para o front preencher a tela
+      return res.status(200).json({
+        existe: true,
+        message: "Autenticado com sucesso!",
+        token: tokenAcesso,
+        cliente: { id: cliente.id, nome: cliente.nome, telefone: cliente.telefone },
+        enderecos: cliente.endereco
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+
+export { ClienteController };

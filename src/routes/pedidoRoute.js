@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { PedidosController } from "../controllers/PedidoController.js";
-import { authUsuario } from "../middlewares/authMiddleware.js";
+import { authUsuario, permitirCargos } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 const pedidosController = new PedidosController();
