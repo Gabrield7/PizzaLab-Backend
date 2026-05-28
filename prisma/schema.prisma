@@ -22,7 +22,7 @@ model Endereco {
   cliente_id  String   @db.VarChar(12)
   logradouro  String   @db.VarChar(255)
   numero      String   @db.VarChar(10)
-  bairro      String  @db.VarChar(100)
+  bairro      String   @db.VarChar(100)
   cidade      String?  @db.VarChar(100)
   cep         String?  @db.VarChar(8)
   complemento String?  @db.VarChar(255)

@@ -1,29 +1,6 @@
 import { prisma } from '../database/prismaClient.js';
 
 export class ClienteController {
-  static async desativarEndereco(req, res, next) {
-    try {
-      const { id } = req.params;
-
-      // Verifica se o endereço existe e está ativo
-      const endereco = await prisma.endereco.findUnique({ where: { id } });
-
-      if (!endereco?.ativo) {
-        return res.status(404).json({ 
-          message: `Endereço não encontrado ou inativo` 
-        });
-      }
-      // Desativa o endereço no banco de dados
-      await prisma.endereco.update({ where: { id }, data: { ativo: false } });
-
-      return res.status(200).json({ 
-        message: 'Endereço desativado com sucesso' 
-      });
-    } catch (error) {
-      next(error); // Passa o erro para o middleware de tratamento de erros
-    }
-  }
-
   static async enviaCodigoVerificado(req, res, next) {
     try {
       const { telefone } = req.body;
@@ -101,6 +78,43 @@ export class ClienteController {
       });
     } catch (error) {
       next(error);
+    }
+  }
+
+static async desativarEndereco(req, res, next) {
+    try {
+      const { id } = req.params;
+      const clienteIdLogado = req.usuarioLogado.id;
+
+      // 
+      const endereco = await prisma.endereco.findFirst({ 
+        where: { 
+          id: id,
+          cliente_id: clienteIdLogado
+        } 
+      });
+
+      if (!endereco?.ativo) {
+        return res.status(404).json({ 
+          message: `Endereço não encontrado ou inativo` 
+        });
+      }
+
+      await prisma.endereco.updateMany({ 
+        where: { 
+          id: id, 
+          cliente_id: clienteIdLogado 
+        }, 
+        data: { 
+          ativo: false 
+        } 
+      });
+
+      return res.status(200).json({ 
+        message: 'Endereço desativado com sucesso' 
+      });
+    } catch (error) {
+      next(error); // Passa o erro para o middleware de tratamento de erros
     }
   }
 }
